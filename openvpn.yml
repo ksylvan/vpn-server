@@ -1,0 +1,9 @@
+---
+- hosts: all
+  gather_facts: false
+  become: true
+
+  tasks:
+  - name: OpenVPN Playbook
+    debug: msg='Hello, world!'
+  - debug: var=foo

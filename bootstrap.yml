@@ -1,5 +1,5 @@
 # Set up OpenVPN on an Ubuntu server
-
+---
 - hosts: all
   gather_facts: false
   become: true
@@ -11,3 +11,21 @@
       (apt -y update && apt install -y python-simplejson)
     register: output
     changed_when: output.stdout != ""
+
+  tasks:
+  - setup:
+  - name: Set hostname
+    replace:
+      dest: /etc/hostname
+      regexp: '\b(.*)\b'
+      replace: '\1 {{ server_host_name }}'
+  - hostname: name="{{ server_host_name }}"
+  - name: Fix /etc/hosts
+    blockinfile:
+      dest: /etc/hosts
+      block: |
+        {{ item.ip }} {{ item.name }}
+      marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.name }} - {{ item.n }}"
+    with_items:
+      - { n: 1, name: "{{ server_host_name }}", ip: "{{ ansible_all_ipv4_addresses[0] }}" }
+      - { n: 2, name: "{{ server_host_name }}", ip: "{{ ansible_all_ipv6_addresses[0] }}" }

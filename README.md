@@ -13,7 +13,7 @@ The first time you run this, it will run an interactive script and
 based on your answers, will create a file `./inventory` and a set of
 variables in `./group_vars/all.yml`.
 
-You can also run `make clean` to remove these files and start over.
+You can also run `make reset` to remove these files and start over.
 
 ## References
 
