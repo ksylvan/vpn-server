@@ -14,12 +14,17 @@
 
   tasks:
   - setup:
-  - name: Set hostname
-    replace:
-      dest: /etc/hostname
-      regexp: '\b(.*)\b'
-      replace: '\1 {{ server_host_name }}'
-  - hostname: name="{{ server_host_name }}"
+  - command: grep {{ server_host_name }} /etc/hostname
+    register: output
+    changed_when: false
+  - block:
+    - name: Set hostname
+      replace:
+        dest: /etc/hostname
+        regexp: '\b(.*)\b'
+        replace: '\1 {{ server_host_name }}'
+    - hostname: name="{{ server_host_name }}"
+    when: output.stdout == ""
   - name: Fix /etc/hosts
     blockinfile:
       dest: /etc/hosts
