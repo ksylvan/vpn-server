@@ -39,14 +39,11 @@
 # Especially important for when we shut the door on root ssh logins.
 #
 - hosts: all
-  gather_facts: false
   remote_user: "{{ server_deploy_user_name }}"
   become: true
 
   tasks:
-  - setup:
-
-  # Host name
+  # Fixing the hostname
   #
   - command: cat /etc/hostname
     register: etc_hostname
@@ -126,7 +123,7 @@
                 line="/usr/sbin/logwatch --output mail --mailto {{ server_logwatch_email }} --detail high"
                 state=present create=yes
 
-  # Root Password change and ssh key removal done last
+  # Root Password change
   #
   - name: Change root password
     user: name=root password="{{ server_root_password }}"
@@ -155,6 +152,6 @@
     notify: Restart ssh
 
   handlers:
-  # Needs to run last! Close the door behind us!
+
   - name: Restart ssh
     service: name=ssh state=restarted
