@@ -3,10 +3,11 @@
 .PHONY: setup all bootstrap reset clean
 
 USER_VAR=server_deploy_user_name
-VAR_FILE=group_vars/all.yml
+VAR_FILE=group_vars/all/vars.yml
 
 all: setup
-	U=$$(grep ${USER_VAR} ${VAR_FILE} | awk -F: '{print $2}'); \
+	@U=$$(grep ${USER_VAR} ${VAR_FILE} | awk -F: '{print $$2}'); \
+	echo "Running playbook using $$U user"; \
 	ansible-playbook -u $$U openvpn.yml
 
 setup:
@@ -16,7 +17,8 @@ bootstrap:
 	ansible-playbook -u root -k bootstrap.yml
 
 reset:
-	rm -f inventory ${VAR_FILE}
+	rm -rf inventory group_vars .vault_pass.txt
+	touch .vault_pass.txt; chmod 600 .vault_pass.txt
 
 clean:
-	rm -f *.retry
+	rm -rf *.retry

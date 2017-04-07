@@ -1,9 +1,11 @@
-# Set up OpenVPN on an Ubuntu server
+# Bootstrap Ubuntu server with some common secure settings
 ---
 - hosts: all
   gather_facts: false
   become: true
 
+  # bootstrap python onto server
+  #
   pre_tasks:
   - name: Install python 2 if not there
     raw: |
@@ -14,17 +16,22 @@
 
   tasks:
   - setup:
-  - command: grep {{ server_host_name }} /etc/hostname
-    register: output
+
+  # Host name
+  #
+  - command: cat /etc/hostname
+    register: etc_hostname
     changed_when: false
+
   - block:
     - name: Set hostname
       replace:
         dest: /etc/hostname
         regexp: '\b(.*)\b'
-        replace: '\1 {{ server_host_name }}'
+        replace: '{{ server_host_name }}'
     - hostname: name="{{ server_host_name }}"
-    when: output.stdout == ""
+    when: etc_hostname.stdout|trim() != server_host_name
+
   - name: Fix /etc/hosts
     blockinfile:
       dest: /etc/hosts
@@ -32,5 +39,54 @@
         {{ item.ip }} {{ item.name }}
       marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.name }} - {{ item.n }}"
     with_items:
-      - { n: 1, name: "{{ server_host_name }}", ip: "{{ ansible_all_ipv4_addresses[0] }}" }
-      - { n: 2, name: "{{ server_host_name }}", ip: "{{ ansible_all_ipv6_addresses[0] }}" }
+      - n: 1
+        name: "{{ server_host_name }}"
+        ip: "{{ ansible_all_ipv4_addresses[0] }}"
+      - n: 2
+        name: "{{ server_host_name }}"
+        ip: "{{ ansible_all_ipv6_addresses[0] }}"
+
+  # Deploy User setup
+  #
+  - name: Add deploy user
+    user: >
+      name={{ server_deploy_user_name }}
+      password="{{ server_deploy_password }}" shell=/bin/sh
+
+  - name: Add authorized keys for deploy user
+    authorized_key:
+      user: "{{ server_deploy_user_name }}"
+      key: "{{ lookup('file', item) }}"
+    with_items: "{{ server_deploy_public_keys }}"
+
+  - name: Add deploy user to sudoers
+    lineinfile:
+      dest: "/etc/sudoers.d/{{ server_deploy_user_name}}"
+      line: "{{ server_deploy_user_name }} ALL=(ALL) NOPASSWD: ALL"
+      state: present
+      create: yes
+
+  # Packages
+  #
+  - apt: name=aptitude state=present
+  - name: Update APT Package cache
+    apt: update_cache=yes cache_valid_time=3600
+
+  - name: Upgrade APT to the latest packages
+    apt: upgrade=safe
+
+  - name: Install required packages
+    apt: state=installed pkg={{ item }}
+    with_items: "{{ server_required_packages }}"
+
+  - name: Install optional packages
+    apt: state=installed pkg={{ item }}
+    with_items: "{{ server_optional_packages }}"
+
+  - name: Adjust APT update intervals
+    copy: src=files/apt_periodic dest=/etc/apt/apt.conf.d/10periodic
+
+  # Root Password done last
+  #
+  - name: Change root password
+    user: name=root password="{{ server_root_password }}"

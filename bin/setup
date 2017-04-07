@@ -6,10 +6,76 @@ if [ -r inventory ]; then
   exit 0
 fi
 
+passlib_install()
+{
+  if [ -z "$(pip list --format=legacy | grep passlib)" ]; then
+    sudo pip install passlib > /dev/null 2>&1
+  fi
+}
+
+genPass()
+{
+  if [ -z "$(which mkpasswd)" ]; then
+    passlib_install
+    python -c "from passlib.hash import sha512_crypt; import getpass; \
+       print sha512_crypt.using(rounds=5000).hash(\"$1\")"
+  else
+    mkpasswd --method=sha-512 "$1"
+  fi
+}
+
+make reset
+
 read -p "Server IP/hostname: " host
 echo $host > inventory
 
-mkdir -p group_vars; cp bin/all.yml group_vars
-read -p "Copied sample to group_vars/all.yml - Edit this and hit return> "
+mkdir -p group_vars/all
+
+VARS=group_vars/all/vars.yml
+VAULT_VARS=group_vars/all/secret.yml
+VAULT_PASS=".vault_pass.txt"
+
+cp bin/all.yml group_vars/all/vars.yml
+
+prompt_with_default()
+{
+  __prompt="$(eval echo \"$1 [\$$2\]: \")"
+  read -p "$__prompt" ans
+  eval "$2=\${ans:-\$$2}"
+}
+
+server_host_name=example.domain.com
+prompt_with_default "host name" server_host_name
+
+vault_root_password=Th1sSh0uldBeBetter
+prompt_with_default "root password" vault_root_password
+
+server_deploy_user_name=deploy
+prompt_with_default "deploy user name" server_deploy_user_name
+vault_deploy_password=Th3D3pl0yPassw0rd
+prompt_with_default "deploy user password" vault_deploy_password
+
+server_logwatch_email=youremail@example.com
+prompt_with_default "logwatch reports email" server_logwatch_email
+
+for i in server_host_name server_deploy_user_name server_logwatch_email; do
+  echo "$i: $(eval echo \$$i)" >> $VARS
+done
+
+vault_root_encrypted_password=$(genPass "$vault_root_password")
+vault_deploy_encrypted_password=$(genPass "$vault_deploy_password")
+
+echo "---" > $VAULT_VARS
+for i in root deploy; do
+  v="vault_${i}_password"; e="vault_${i}_encrypted_password"
+  for j in $v $e; do
+    echo "$j: $(eval echo \"\$$j\")" >> $VAULT_VARS
+  done
+done
+
+vault_pass='This is my c00l vault password'
+prompt_with_default "Your vault password" vault_pass
+echo "$vault_pass" > $VAULT_PASS
+ansible-vault encrypt $VAULT_VARS
 
 make bootstrap
