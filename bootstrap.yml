@@ -51,7 +51,7 @@
   - name: Add deploy user
     user: >
       name={{ server_deploy_user_name }}
-      password="{{ server_deploy_password }}" shell=/bin/sh
+      password="{{ server_deploy_password }}" shell=/bin/bash
 
   - name: Add authorized keys for deploy user
     authorized_key:
