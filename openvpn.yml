@@ -1,9 +1,18 @@
+# Based on info from http://archive.is/eHtSi
+# Digital Ocean guide on OpenVPN
+#
 ---
 - hosts: all
   gather_facts: false
   become: true
 
   tasks:
-  - name: OpenVPN Playbook
-    debug: msg='Hello, world!'
-  - debug: var=foo
+  - name: Update APT Package cache
+    apt: update_cache=yes cache_valid_time=3600
+  - name: Install software
+    apt:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - openvpn
+      - easy-rsa
