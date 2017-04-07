@@ -6,19 +6,22 @@ if [ -r inventory ]; then
   exit 0
 fi
 
-passlib_install()
-{
-  if [ -z "$(pip list --format=legacy | grep passlib)" ]; then
-    sudo pip install passlib > /dev/null 2>&1
-  fi
-}
-
 genPass()
 {
   if [ -z "$(which mkpasswd)" ]; then
-    passlib_install
-    python -c "from passlib.hash import sha512_crypt; import getpass; \
-       print sha512_crypt.using(rounds=5000).hash(\"$1\")"
+    case $(uname -s) in
+    Darwin) # MacOS
+      if [ -z "$(pip list --format=legacy | grep passlib)" ]; then
+        sudo pip install passlib > /dev/null 2>&1
+      fi
+      python -c "from passlib.hash import sha512_crypt; import getpass; \
+        print sha512_crypt.using(rounds=5000).hash(\"$1\")"
+      ;;
+    *)
+      sudo apt-get install whois > /dev/null 2>&1
+      mkpasswd --method=sha-512 "$1"
+      ;;
+    esac
   else
     mkpasswd --method=sha-512 "$1"
   fi

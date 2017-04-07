@@ -7,12 +7,4 @@
   become: true
 
   tasks:
-  - name: Update APT Package cache
-    apt: update_cache=yes cache_valid_time=3600
-  - name: Install software
-    apt:
-      name: "{{ item }}"
-      state: present
-    with_items:
-      - openvpn
-      - easy-rsa
+  - debug: msg="This is where the OpenVPN set up tasks will go"
