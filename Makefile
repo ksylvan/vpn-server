@@ -5,7 +5,9 @@
 USER_VAR=server_deploy_user_name
 VAR_FILE=group_vars/all/vars.yml
 
-all: setup
+ROLES=roles/Stouts.openvpn
+
+all: ${ROLES} setup
 	@U=$$(grep ${USER_VAR} ${VAR_FILE} | awk -F: '{print $$2}'); \
 	echo "Running playbook using $$U user"; \
 	ansible-playbook -u $$U openvpn.yml
@@ -31,3 +33,7 @@ reset:
 # simple cleanup of ansible cruft
 clean:
 	rm -rf *.retry
+
+# assume roles are defined in requirements.yml
+${ROLES}:
+	ansible-galaxy install -p roles -r requirements.yml

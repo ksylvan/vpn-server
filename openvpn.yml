@@ -3,8 +3,11 @@
 #
 ---
 - hosts: all
-  gather_facts: false
   become: true
+  roles:
+  - Stouts.openvpn
+  vars:
+    openvpn_enabled: false
 
   tasks:
   - debug: msg="This is where the OpenVPN set up tasks will go"
