@@ -8,7 +8,7 @@ fi
 
 genPass()
 {
-  if [ -z "$(which mkpasswd)" ]; then
+  if [ -z "$(which mkpasswd 2>/dev/null)" ]; then
     case $(uname -s) in
     Darwin) # MacOS
       if [ -z "$(pip list --format=legacy | grep passlib)" ]; then
@@ -18,16 +18,20 @@ genPass()
         print sha512_crypt.using(rounds=5000).hash(\"$1\")"
       ;;
     *)
-      sudo apt-get install whois > /dev/null 2>&1
-      mkpasswd --method=sha-512 "$1"
+      if [ -n $(which docker 2>/dev/null) ]; then
+        docker pull kayvan/mkpasswd > /dev/null 2>&1
+        docker run --rm kayvan/mkpasswd "$1"
+      else
+        # debian based systems have mkpasswd in whois package
+        sudo apt-get install whois > /dev/null 2>&1
+        mkpasswd --method=sha-512 "$1"
+      fi
       ;;
     esac
   else
     mkpasswd --method=sha-512 "$1"
   fi
 }
-
-make reset
 
 read -p "Server IP/hostname: " host
 echo $host > inventory
