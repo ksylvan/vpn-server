@@ -1,29 +1,36 @@
 # Makefile for VPN server setup
 #
-.PHONY: setup all bootstrap rebootstrap reset clean
+.PHONY: all bootstrap openvpn rebootstrap reset clean
 
 USER_VAR=server_deploy_user_name
 VAR_FILE=group_vars/all/vars.yml
+DEPLOY_USER=$(shell grep ${USER_VAR} ${VAR_FILE} >/dev/null 2>&1 | \
+	awk -F: '{print $$2}')
+
+ifeq "${DEPLOY_USER}" ""
+DEPLOY_USER=deploy
+endif
 
 ROLES=roles/Stouts.openvpn
 
-all: ${ROLES} setup
-	@U=$$(grep ${USER_VAR} ${VAR_FILE} | awk -F: '{print $$2}'); \
-	echo "Running playbook using $$U user"; \
-	ansible-playbook -u $$U openvpn.yml
+all: ${ROLES}
+	@if [ ! -r ${VAR_FILE} ]; then \
+		./bin/setup; \
+		make bootstrap; \
+	fi; \
+	make openvpn
 
-# First time run
-setup:
-	@./bin/setup
+openvpn:
+	echo "Running playbook using ${DEPLOY_USER} user"; \
+	ansible-playbook -u ${DEPLOY_USER} openvpn.yml
 
-# bootstrap sets up a secure ubuntu server
+# bootstrap sets up a secure ubuntu server (the first time)
 bootstrap:
 	ansible-playbook -u root -k bootstrap.yml
 
 # since root ssh logins are disabled, need to run this when boostrapping again
 rebootstrap:
-	@U=$$(grep ${USER_VAR} ${VAR_FILE} | awk -F: '{print $$2}'); \
-	ansible-playbook -u $$U bootstrap.yml
+	ansible-playbook -u ${DEPLOY_USER} bootstrap.yml
 
 # clean up and start over
 reset:
@@ -34,6 +41,8 @@ reset:
 clean:
 	rm -rf *.retry
 
+roles/Stouts.openvpn:
+	cd roles; git clone git@github.com:ksylvan/Stouts.openvpn.git
 # assume roles are defined in requirements.yml
-${ROLES}:
-	ansible-galaxy install -p roles -r requirements.yml
+#${ROLES}:
+#	ansible-galaxy install -p roles -r requirements.yml

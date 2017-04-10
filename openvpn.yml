@@ -6,8 +6,25 @@
   become: true
   roles:
   - Stouts.openvpn
+
   vars:
-    openvpn_enabled: false
+    openvpn_key_country: US
+    openvpn_key_province: CA
+    openvpn_key_city: SanJose
+    openvpn_key_org: Sylvan
+    openvpn_key_email: postmaster@sylvan.com
+
+    openvpn_key_size: 1024
+
+    openvpn_clients: [myvpn]
+    openvpn_use_pam_users:
+    - { name: ipad, password: 'ipad081966' }
+    - { name: iphone, password: 'iphone081966' }
+    - { name: laptop, password: 'laptop081966' }
+
+    openvpn_tls_auth: true
+    openvpn_unified_client_profiles: yes
 
   tasks:
-  - debug: msg="This is where the OpenVPN set up tasks will go"
+  - name: Allow VPN traffic {{ openvpn_proto }}:{{ openvpn_port }}
+    ufw: rule=allow port={{ openvpn_port }} proto={{ openvpn_proto }}
