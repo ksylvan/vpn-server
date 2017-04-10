@@ -14,13 +14,34 @@ The first time you run this, it will run `./bin/setup` and set your
 
 Use `make reset` to remove these files and start over.
 
-You can also `make rebootstrap` if you make changes to your
+You can also `make redo` if you make changes to your
 base variables and want to push those changes to your server.
 
-If you want to make changes to your secrets (e.g. add users or change various
+If you want to make changes to your secrets (e.g. add/remove users or change
 passwords), use `make edit`. This task decrypts and re-encrypts your secrets
-using `ansible-vault`. If you change any Linux account passwords, you
-will also have to fix the SHA-512 encrypted form.
+using `ansible-vault`.
+
+## User password hashes
+
+Refer to the [Ansible docs regarding user passwords](http://docs.ansible.com/ansible/faq.html#how-do-i-generate-crypted-passwords-for-the-user-module)
+to understand how we generate the Linux user password hashes to make or
+modify user accounts on the VPN server.
+
+To make sure this works, make sure that the `./bin/mkpasswd` script works:
+
+      ./bin/mkpasswd TestTheHash
+      $6$JBPVsmzre/hFkiFF$RfmrOFdkXs.QNF515TIGtokseUafj[...]
+
+If you want to edit your secrets, the easiest think is to use the `edit` task,
+like this:
+
+      $ EDITOR=vi make edit
+      Decryption successful
+
+      NOTE: Run "make redo" to push your changes.
+
+      $ make redo
+
 
 ## References
 

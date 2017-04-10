@@ -1,6 +1,6 @@
 # Makefile for VPN server setup
 #
-.PHONY: all bootstrap openvpn rebootstrap reset clean edit
+.PHONY: all bootstrap openvpn rebootstrap reset clean edit redo
 
 USER_VAR=server_deploy_user_name
 VAR_FILE=group_vars/all/vars.yml
@@ -16,6 +16,7 @@ ROLES=roles/Stouts.openvpn
 all: ${ROLES}
 	@if [ ! -r ${VAR_FILE} ]; then \
 		./bin/setup; \
+		if [ $$? -ne 0 ]; then exit $$?; fi; \
 		make bootstrap; \
 	fi; \
 	make openvpn
@@ -31,6 +32,8 @@ bootstrap:
 # since root ssh logins are disabled, need to run this when boostrapping again
 rebootstrap:
 	ansible-playbook -u ${DEPLOY_USER} bootstrap.yml
+
+redo: rebootstrap all
 
 # clean up and start over
 reset:
@@ -56,4 +59,5 @@ edit:
 		trap "ansible-vault encrypt ${SECRETS_FILE}" EXIT; \
 		ansible-vault decrypt ${SECRETS_FILE}; \
 		$$EDITOR ${SECRETS_FILE}; \
+		./bin/redo_passwords; \
 	fi

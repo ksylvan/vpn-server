@@ -4,33 +4,6 @@
 
 cd $(dirname $0)/..
 
-genPass()
-{
-  if [ -z "$(which mkpasswd 2>/dev/null)" ]; then
-    case $(uname -s) in
-    Darwin) # MacOS
-      if [ -z "$(pip list --format=legacy | grep passlib)" ]; then
-        sudo pip install passlib > /dev/null 2>&1
-      fi
-      python -c "from passlib.hash import sha512_crypt; import getpass; \
-        print sha512_crypt.using(rounds=5000).hash(\"$1\")"
-      ;;
-    *)
-      if [ -n $(which docker 2>/dev/null) ]; then
-        docker pull kayvan/mkpasswd > /dev/null 2>&1
-        docker run --rm kayvan/mkpasswd "$1"
-      else
-        # debian based systems have mkpasswd in whois package
-        sudo apt-get install whois > /dev/null 2>&1
-        mkpasswd --method=sha-512 "$1"
-      fi
-      ;;
-    esac
-  else
-    mkpasswd --method=sha-512 "$1"
-  fi
-}
-
 read -p "Server IP/hostname: " host
 echo $host > inventory
 
@@ -52,12 +25,12 @@ prompt_with_default()
 server_host_name=example.domain.com
 prompt_with_default "host name" server_host_name
 
-vault_root_password=Th1sSh0uldBeBetter
+vault_root_password=MyR00tPa33w0rd
 prompt_with_default "root password" vault_root_password
 
 server_deploy_user_name=deploy
 prompt_with_default "deploy user name" server_deploy_user_name
-vault_deploy_password=Th3D3pl0yPassw0rd
+vault_deploy_password=MyD3pl0yPas3w0rd
 prompt_with_default "deploy user password" vault_deploy_password
 
 server_logwatch_email=youremail@example.com
@@ -84,14 +57,15 @@ for i in server_host_name server_deploy_user_name server_logwatch_email \
   echo "$i: $(eval echo \$$i)" >> $VARS
 done
 
-vault_root_encrypted_password=$(genPass "$vault_root_password")
-vault_deploy_encrypted_password=$(genPass "$vault_deploy_password")
+vault_root_encrypted_password=$(./bin/mkpasswd "$vault_root_password")
+if [ $? -ne 0 ]; then exit $?; fi
+vault_deploy_encrypted_password=$(./bin/mkpasswd "$vault_deploy_password")
 
 echo "---" > $VAULT_VARS
 for i in root deploy; do
   v="vault_${i}_password"; e="vault_${i}_encrypted_password"
   for j in $v $e; do
-    echo "$j: $(eval echo \"\$$j\")" >> $VAULT_VARS
+    echo "$j: $(eval echo \\\'\"\$$j\"\\\')" >> $VAULT_VARS
   done
 done
 
