@@ -9,9 +9,8 @@ Ansible Playbooks for setting up a secured remote VPN server.
 
 - `make`
 
-The first time you run this, it will run an interactive script and
-based on your answers, will create a file `./inventory` and a set of
-variable files in `./group_vars/all/`.
+The first time you run this, it will run `./bin/setup` and set your
+`./inventory` files and variable files in `./group_vars/all/`.
 
 Use `make reset` to remove these files and start over.
 

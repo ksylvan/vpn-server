@@ -15,6 +15,7 @@
     openvpn_key_email: postmaster@sylvan.com
 
     openvpn_key_size: 1024
+    openvpn_cipher: 'AES-256-CBC'
 
     openvpn_clients: [myvpn]
     openvpn_use_pam_users:
@@ -28,3 +29,52 @@
   tasks:
   - name: Allow VPN traffic {{ openvpn_proto }}:{{ openvpn_port }}
     ufw: rule=allow port={{ openvpn_port }} proto={{ openvpn_proto }}
+  - name: Figure out the default public interface
+    shell: ip route | grep default | sed 's/.*dev \([^ ]*\) .*/\1/'
+    register: output
+    changed_when: false
+  - set_fact:
+      def_route_dev: "{{ output.stdout }}"
+  - block:
+    - name: Figure out our server DNS servers
+      shell: grep '^nameserver' /etc/resolv.conf | awk '{print $2}' | grep -v '^127'
+      register: output
+    - set_fact:
+        server_dns_servers: "{{ output.stdout_lines }}"
+    - name: Fix VPN server config to route traffic from connected clients
+      blockinfile:
+        marker: '# {mark} OpenVPN client config'
+        dest: /etc/openvpn/server.conf
+        block: |
+          push "redirect-gateway def1 bypass-dhcp"
+          {% for item in server_dns_servers %}
+          push "dhcp-option DNS {{ item }}"
+          {% endfor %}
+      notify: Restart openvpn
+    - name: Set up ufw before.rules
+      blockinfile:
+        marker: "# {mark} ANSIBLE MANAGED OpenVPN Rules"
+        dest: /etc/ufw/before.rules
+        block: |
+          # NAT table rules
+          *nat
+          :POSTROUTING ACCEPT [0:0]
+          # Allow traffic from OpenVPN client to public interface
+          -A POSTROUTING -s 10.8.0.0/8 -o {{ def_route_dev }} -j MASQUERADE
+          COMMIT
+        insertbefore: "# Don't delete these required lines"
+      notify: Restart ufw
+    - name: Default forward policy change from DROP to ACCEPT
+      lineinfile:
+        dest: /etc/default/ufw
+        regexp: '^DEFAULT_FORWARD_POLICY='
+        line: 'DEFAULT_FORWARD_POLICY="ACCEPT"'
+      notify: Restart ufw
+    when: def_route_dev|trim() != ""
+  - debug: msg="ERROR -  Could not set up VPN NAT forwarding. No default route!"
+    when: def_route_dev|trim() == ""
+  handlers:
+    - name: Restart ufw
+      ufw: state=reloaded
+    - name: Restart openvpn
+      service: name={{openvpn_service}} state=restarted
