@@ -17,6 +17,11 @@ Use `make reset` to remove these files and start over.
 You can also `make rebootstrap` if you make changes to your
 base variables and want to push those changes to your server.
 
+If you want to make changes to your secrets (e.g. add users or change various
+passwords), use `make edit`. This task decrypts and re-encrypts your secrets
+using `ansible-vault`. If you change any Linux account passwords, you
+will also have to fix the SHA-512 encrypted form.
+
 ## References
 
 - [Securing a Server with Ansible](https://ryaneschinger.com/blog/securing-a-server-with-ansible/)

@@ -1,6 +1,6 @@
 # Makefile for VPN server setup
 #
-.PHONY: all bootstrap openvpn rebootstrap reset clean
+.PHONY: all bootstrap openvpn rebootstrap reset clean edit
 
 USER_VAR=server_deploy_user_name
 VAR_FILE=group_vars/all/vars.yml
@@ -46,3 +46,14 @@ roles/Stouts.openvpn:
 # assume roles are defined in requirements.yml
 #${ROLES}:
 #	ansible-galaxy install -p roles -r requirements.yml
+
+SECRETS_FILE=group_vars/all/secret.yml
+edit:
+	@if [ -z "$$EDITOR" ]; then \
+		echo "EDITOR environment variable must be set."; exit 1; \
+	fi
+	@if [ -r ${SECRETS_FILE} ]; then \
+		trap "ansible-vault encrypt ${SECRETS_FILE}" EXIT; \
+		ansible-vault decrypt ${SECRETS_FILE}; \
+		$$EDITOR ${SECRETS_FILE}; \
+	fi
