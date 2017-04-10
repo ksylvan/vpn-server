@@ -33,7 +33,7 @@ Refer to the [Ansible docs regarding user passwords](http://docs.ansible.com/ans
 to understand how we generate the Linux user password hashes to make or
 modify user accounts on the VPN server.
 
-To make sure this works, make sure that the `./bin/mkpasswd` script works:
+To ensure this works, make sure that the `./bin/mkpasswd` script works:
 
       ./bin/mkpasswd TestTheHash
       $6$JBPVsmzre/hFkiFF$RfmrOFdkXs.QNF515TIGtokseUafj[...]
