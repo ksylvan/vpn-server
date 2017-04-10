@@ -8,21 +8,10 @@
   - Stouts.openvpn
 
   vars:
-    openvpn_key_country: US
-    openvpn_key_province: CA
-    openvpn_key_city: SanJose
-    openvpn_key_org: Sylvan
-    openvpn_key_email: postmaster@sylvan.com
-
     openvpn_key_size: 1024
     openvpn_cipher: 'AES-256-CBC'
-
     openvpn_clients: [myvpn]
-    openvpn_use_pam_users:
-    - { name: ipad, password: 'ipad081966' }
-    - { name: iphone, password: 'iphone081966' }
-    - { name: laptop, password: 'laptop081966' }
-
+    openvpn_use_pam_users: "{{ vault_vpn_users }}"
     openvpn_tls_auth: true
     openvpn_unified_client_profiles: yes
 
@@ -39,6 +28,7 @@
     - name: Figure out our server DNS servers
       shell: grep '^nameserver' /etc/resolv.conf | awk '{print $2}' | grep -v '^127'
       register: output
+      changed_when: false
     - set_fact:
         server_dns_servers: "{{ output.stdout_lines }}"
     - name: Fix VPN server config to route traffic from connected clients
