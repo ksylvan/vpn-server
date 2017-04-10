@@ -4,10 +4,16 @@ Ansible Playbooks for setting up a secured remote VPN server.
 
 ## Quick Start
 
+Prerequisite: Recent version of [Ansible](http://docs.ansible.com) installed
+on your control host.
+
 - Create a recent Ubuntu server, using whatever process you choose. I created
   an Ubuntu 16.10 x64 server in the cloud.
 
 - `make`
+
+- Reboot the installed server and copy the unified `myvpn.ovpn` client profile
+  from the server's `/etc/openvpn/keys` directory to use by your clients.
 
 The first time you run this, it will run `./bin/setup` and set your
 `./inventory` files and variable files in `./group_vars/all/`.
@@ -41,7 +47,6 @@ like this:
       NOTE: Run "make redo" to push your changes.
 
       $ make redo
-
 
 ## References
 
