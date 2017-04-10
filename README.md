@@ -38,8 +38,7 @@ To ensure this works, make sure that the `./bin/mkpasswd` script works:
       ./bin/mkpasswd TestTheHash
       $6$JBPVsmzre/hFkiFF$RfmrOFdkXs.QNF515TIGtokseUafj[...]
 
-If you want to edit your secrets, the easiest think is to use the `edit` task,
-like this:
+If you wish to edit your secrets, use the `edit` task, like this:
 
       $ EDITOR=vi make edit
       Decryption successful
