@@ -62,15 +62,10 @@
     blockinfile:
       dest: /etc/hosts
       block: |
-        {{ item.ip }} {{ item.name }}
-      marker: "# {mark} ANSIBLE MANAGED {{ item.name }} - {{ item.n }}"
-    with_items:
-      - n: 1
-        name: "{{ server_host_name }}"
-        ip: "{{ ansible_all_ipv4_addresses[0] }}"
-      - n: 2
-        name: "{{ server_host_name }}"
-        ip: "{{ ansible_all_ipv6_addresses[0] }}"
+        {% for item in ansible_all_ipv4_addresses %}
+        {{ item }} {{ server_host_name }}
+        {% endfor %}
+      marker: "# {mark} ANSIBLE MANAGED"
 
   # Packages
   #

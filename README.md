@@ -8,7 +8,7 @@ Prerequisite: Recent version of [Ansible](http://docs.ansible.com) installed
 on your control host.
 
 - Create a recent Ubuntu server, using whatever process you choose. I created
-  an Ubuntu 16.10 x64 server in the cloud.
+  an Ubuntu 17.04 x64 server in the cloud (also tested for 16.10).
 
 - `make`
 
