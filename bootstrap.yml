@@ -123,6 +123,24 @@
                 line="/usr/sbin/logwatch --output mail --mailto {{ server_logwatch_email }} --detail high"
                 state=present create=yes
 
+  - name: New systemd unit to fix postfix /etc/resolv.conf
+    blockinfile:
+      path: /etc/systemd/system/fixpostfix.service
+      create: yes
+      block: |
+        [Unit]
+        Description=Fix poorly copied resolv.conf for postfix
+        Wants=network-online.target
+        After=network-online.target
+        [Service]
+        Type=oneshot
+        ExecStart=/bin/cp /etc/resolv.conf /var/spool/postfix/etc/resolv.conf
+        [Install]
+        WantedBy=multi-user.target
+
+  - name: Fix boot order problem for postfix
+    systemd: name=fixpostfix.service enabled=true
+
   # Root Password change
   #
   - name: Change root password
